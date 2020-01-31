@@ -1,0 +1,50 @@
+version: '2'
+
+services:
+  web:
+    image: 472532368511.dkr.ecr.us-east-1.amazonaws.com/budsies.com/backend/api/dev/nginx:2019-11-20
+    volumes:
+      - ${SOURCES_PATH}:/home/spa/app
+    environment:
+      VIRTUAL_HOST: ${DOMAIN}
+      HTTPS_METHOD: noredirect
+      #LETSENCRYPT_HOST: ${DOMAIN}
+      #LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
+      CERT_NAME: localdev
+    networks:
+      default:
+      reverseproxy:
+        aliases:
+          - ${COMPOSE_PROJECT_NAME}
+    depends_on:
+      - "app"
+    restart: "no"
+  app:
+    image: php:7.4-fpm
+    volumes:
+      - ${SOURCES_PATH}:/home/spa/app
+    environment:
+      DATABASE_NAME: ${POSTGRES_DB}
+      DATABASE_HOST: db
+      DATABASE_PORT: ${POSTGRES_BIND_PORT}
+      DATABASE_USER: ${POSTGRES_USER}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+    networks:
+      default:
+      reverseproxy:
+    depends_on:
+      - "db"
+    restart: "no"
+  db:
+    image: postgres:12.1
+    ports:
+      - "${POSTGRES_BIND_PORT}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+
+networks:
+  reverseproxy:
+    external:
+      name: webdevelopmentreverseproxy_default
